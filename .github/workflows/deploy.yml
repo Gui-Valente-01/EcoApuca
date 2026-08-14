@@ -37,7 +37,11 @@ jobs:
       # Impede o GitHub de processar a pasta com Jekyll
       - run: touch dist/.nojekyll
 
+      # enablement liga o GitHub Pages sozinho na primeira execucao,
+      # dispensando configurar na mao em Settings > Pages.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
