@@ -1,0 +1,54 @@
+name: Publicar no GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Permissões que o GitHub Pages exige para publicar
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Se dois deploys forem disparados juntos, deixa o mais novo terminar
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # O site fica em usuario.github.io/NOME-DO-REPO/, entao o build precisa
+      # saber esse prefixo para gerar os caminhos dos arquivos corretamente.
+      - name: Build estatico
+        run: npm run build:static -- --base=/${{ github.event.repository.name }}/
+
+      # Impede o GitHub de processar a pasta com Jekyll
+      - run: touch dist/.nojekyll
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
